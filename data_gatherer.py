@@ -12,9 +12,6 @@ OUTPUT_DIR = "vehicle_data"
 # Create output directory if it doesn't exist
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Get today's date for filenames
-today_str = datetime.now().strftime("%Y-%m-%d")
-
 def get_vehicle_ids(csv_file):
     vehicle_ids = set()
     with open(csv_file, newline='') as csvfile:
@@ -42,8 +39,9 @@ def fetch_data(vehicle_id):
     return None
 
 def save_json(vehicle_id, data):
+    today_str = datetime.now().strftime("%Y-%m-%d")
     filename = f"{OUTPUT_DIR}/{today_str}_{vehicle_id}.json"
-    with open(filename, 'a') as f:
+    with open(filename, 'w') as f:
         json.dump(data, f, indent=2)
     print(f"[{vehicle_id}] Data saved to {filename}")
 
