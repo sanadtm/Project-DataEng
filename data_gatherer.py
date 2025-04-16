@@ -42,8 +42,8 @@ def fetch_data(vehicle_id):
     return None
 
 def save_json(vehicle_id, data):
-    filename = f"{OUTPUT_DIR}/vehicle_{vehicle_id}_{today_str}.json"
-    with open(filename, 'w') as f:
+    filename = f"{OUTPUT_DIR}/{today_str}_{vehicle_id}.json"
+    with open(filename, 'a') as f:
         json.dump(data, f, indent=2)
     print(f"[{vehicle_id}] Data saved to {filename}")
 
