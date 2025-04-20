@@ -1,0 +1,8 @@
+# VM generated files 
+venv
+pubsub-env
+source
+
+#JSON files
+/vehicle_data/*.json
+/vehicle_data/merged_data/*.json 
