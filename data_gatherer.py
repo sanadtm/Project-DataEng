@@ -1,4 +1,4 @@
-from urllib import request, error  
+from urllib import request
 import csv
 import json
 import os
@@ -29,13 +29,8 @@ def fetch_data(vehicle_id):
         with request.urlopen(url) as response:
             data = json.loads(response.read().decode('utf-8'))
             return data
-    except error.HTTPError as e:
-        if e.code == 404:
-            print(f"[{vehicle_id}] No data found (code 404). Skipping.")
-        else:
-            print(f"[{vehicle_id}] HTTP error: {e.code}. Skipping.")
     except Exception as e:
-        print(f"[{vehicle_id}] General error: {e}. Skipping.")
+        pass  
     return None
 
 def save_json(vehicle_id, data):
@@ -57,3 +52,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
