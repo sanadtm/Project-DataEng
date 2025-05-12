@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 
 # Configuration
-#SERVICE_ACCOUNT_FILE = "/opt/dataengxr-dataguru-<your-key>.json"  # update this path if needed
 SERVICE_ACCOUNT_FILE = "/opt/dataengr-dataguru-809ccf8d3880.json"
 PROJECT_ID = "dataengr-dataguru"
 TOPIC_ID = "project-topic"

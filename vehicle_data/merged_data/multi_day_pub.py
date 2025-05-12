@@ -39,11 +39,11 @@ def main():
         if batch:
             publish_batch(batch)
 
-        print(f"✅ Finished reading file: {filename}")
+        print(f"Done with file: {filename}")
 
     end = time.time()
-    print(f"\n✅ Published {total_count} messages to {topic_path}")
-    print(f"⏱️ Total runtime: {round(end - start, 2)} seconds")
+    print(f" Published {total_count} messages to {topic_path}")
+    print(f" Total runtime: {round(end - start, 2)} seconds")
 
 def publish_batch(batch):
     futures = []

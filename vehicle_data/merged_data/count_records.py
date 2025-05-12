@@ -14,9 +14,9 @@ def main():
                 total += count
                 print(f"{filename}: {count} records")
         except Exception as e:
-            print(f"❌ Error reading {filename}: {e}")
+            print(f" Error reading {filename}: {e}")
 
-    print(f"\n📦 Total records across all files: {total}")
+    print(f" Total records found: {total}")
 
 if __name__ == "__main__":
     main()
