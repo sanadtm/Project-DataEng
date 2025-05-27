@@ -1,75 +1,103 @@
-from urllib import request, error  
-import csv
 import os
+import csv
 import json
+import time
+from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from collections import defaultdict
+import re
 
-# Constants
-BASE_URL = "https://busdata.cs.pdx.edu/api/getStopEvents?vehicle_num="
 CSV_FILE = "Glitch Vehicle IDs - VehicleGroupsIDs.csv"
+BASE_URL = "https://busdata.cs.pdx.edu/api/getStopEvents?vehicle_num="
 OUTPUT_DIR = "stop_event_data"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def get_vehicle_ids(csv_file):
-    vehicle_ids = set()
-    with open(csv_file, newline='') as csvfile:
-        reader = csv.reader(csvfile)
+def get_vehicle_nums(csv_file):
+    vehicle_nums = set()
+    with open(csv_file, newline='') as f:
+        reader = csv.reader(f)
         for row in reader:
             for item in row:
                 item = item.strip()
                 if item.isdigit():
-                    vehicle_ids.add(item)
-    return list(vehicle_ids)
+                    vehicle_nums.add(item)
+    return list(vehicle_nums)
 
-def scrape_data(vehicle_num):
+def fetch_html(vehicle_num):
     url = f"{BASE_URL}{vehicle_num}"
     try:
-        with request.urlopen(url) as response:
-            html = response.read().decode("utf-8")
-            soup = BeautifulSoup(html, "html.parser")
-
-            # Try to extract the date from the header
-            header = soup.find("h2")
-            date_str = "unknown_date"
-            if header and "for" in header.text:
-                parts = header.text.strip().split("for")
-                if len(parts) > 1:
-                    date_str = parts[1].strip()
-
-            # Parse table
-            table = soup.find("table")
-            if not table:
-                return date_str, []
-
-            headers = [th.text.strip() for th in table.find_all("th")]
-            rows = []
-            for tr in table.find_all("tr")[1:]:
-                cells = [td.text.strip() for td in tr.find_all("td")]
-                if len(cells) == len(headers):
-                    rows.append(dict(zip(headers, cells)))
-
-            return date_str, rows
+        with urlopen(url) as response:
+            return response.read()
     except Exception as e:
-        print(f"[{vehicle_num}] Failed to fetch/parse HTML: {e}")
-        return "error", []
+        print(f"[{vehicle_num}] Error fetching data: {e}")
+        return None
 
-def save_json(vehicle_num, date_str, records):
-    filename = f"{OUTPUT_DIR}/{date_str}_{vehicle_num}.json"
-    with open(filename, "w") as f:
-        json.dump(records, f, indent=2)
-    print(f"[{vehicle_num}] Saved {len(records)} records to {filename}")
+def parse_service_date(soup):
+    heading = soup.find('h1')
+    if heading:
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", heading.text)
+        if match:
+            return match.group(1)
+    return time.strftime("%Y-%m-%d")
+
+def parse_stop_events(html_data, vehicle_num):
+    soup = BeautifulSoup(html_data, 'html.parser')
+    service_date = parse_service_date(soup)
+
+    data = []
+    trip_sections = soup.find_all('h2', string=re.compile(r'Stop events for PDX_TRIP'))
+
+    for h2 in trip_sections:
+        trip_id_match = re.search(r'PDX_TRIP\s+(-?\d+)', h2.text)
+        if not trip_id_match:
+            continue
+        trip_id = trip_id_match.group(1)
+
+        table = h2.find_next('table')
+        if not table:
+            continue
+
+        rows = table.find_all('tr')
+        if not rows:
+            continue
+
+        headers = [th.text.strip() for th in rows[0].find_all('th')]
+
+        for row in rows[1:]:
+            cols = row.find_all('td')
+            values = [td.text.strip() for td in cols]
+            if len(values) != len(headers):
+                continue
+            record = dict(zip(headers, values))
+            record['vehicle_num'] = vehicle_num
+            record['trip_id'] = trip_id
+            data.append(record)
+
+    return service_date, data
 
 def main():
-    vehicle_ids = get_vehicle_ids(CSV_FILE)
-    print(f"Found {len(vehicle_ids)} vehicle IDs.")
+    vehicle_nums = get_vehicle_nums(CSV_FILE)
+    all_records = []
+    service_date = None
 
-    for vid in vehicle_ids:
-        print(f"Scraping stop event data for vehicle {vid}...")
-        date_str, records = scrape_data(vid)
+    for num in vehicle_nums:
+        print(f"Processing vehicle {num}...")
+        html = fetch_html(num)
+        if not html:
+            continue
+        current_date, records = parse_stop_events(html, num)
         if records:
-            save_json(vid, date_str, records)
+            service_date = current_date  # Use the last valid one
+            all_records.extend(records)
+        time.sleep(0.2)
+
+    if service_date and all_records:
+        filename = os.path.join(OUTPUT_DIR, f"{service_date}.json")
+        with open(filename, 'w') as f:
+            json.dump(all_records, f, indent=2)
+        print(f"Saved {len(all_records)} records to {filename}")
+    else:
+        print("No valid data to save.")
 
 if __name__ == "__main__":
     main()

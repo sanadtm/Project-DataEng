@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Trip Map</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoidHVhbjg2ODYiLCJhIjoiY21iMm4xNzBkMGplaTJscHIzOWk2YjQwdCJ9.9cWrXI98KNaOYYHye0-Xxg'; // 👈 Replace with your token
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [-122.66, 45.505], // near Tilikum
+    zoom: 13
+  });
+
+  map.on('load', () => {
+    map.addSource('trip', {
+      type: 'geojson',
+      data: 'tunnel_trip.geojson'
+    });
+
+    map.addLayer({
+      id: 'trip-points',
+      type: 'circle',
+      source: 'trip',
+      paint: {
+        'circle-radius': 5,
+        'circle-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'speed'],
+          0, '#2DC4B2',
+          10, '#3BB3C3',
+          20, '#669EC4',
+          30, '#8B88B6',
+          40, '#A2719B',
+          50, '#AA5E79'
+        ],
+        'circle-opacity': 0.8
+      }
+    });
+  });
+</script>
+</body>
+</html>
+

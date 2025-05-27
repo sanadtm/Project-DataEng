@@ -1,29 +1,44 @@
-from google.cloud import pubsub_v1 
+import json
 import time
 import threading
-import json
 import pandas as pd
-import psycopg2
+from datetime import datetime, timedelta
+from google.cloud import pubsub_v1
 from collections import defaultdict
 import statistics
-from datetime import datetime, timedelta
+import psycopg2
+import os
 
-# Pub/Sub configuration
-project_id = "dataengr-dataguru"
-sub_id = "project-topic-sub"
-
-# PostgreSQL connection
+# --- PostgreSQL connection ---
 conn = psycopg2.connect(
     dbname="trimet",
     user="postgres",
     password="123456",
-    host="localhost"
+    host="::1"
+    # host="localhost"
 )
 cur = conn.cursor()
+trip_ids = set()
 
-# Shared state
+# Clear buffer files before each run
+open("trip_buffer.csv", "w").close()
+open("breadcrumb_buffer.csv", "w").close()
+
+# --- Pub/Sub configuration ---
+project_id = "dataengr-dataguru"
+sub_id = "project-topic-sub"
+subscriber = pubsub_v1.SubscriberClient()
+sub_path = subscriber.subscription_path(project_id, sub_id)
+
+# --- Control flags ---
 msgs = []
 records = []
+lock = threading.Lock()
+idle_seconds = 10
+last_msg_time = time.time()
+passed_count = 0
+failed_count = 0
+previous_data = {}
 lock = threading.Lock()
 idle_seconds = 10
 
@@ -98,31 +113,6 @@ def calculate_speed(current, previous):
     except:
         pass
     return 0.0
-
-# def callback(msg):
-#     global last_msg_time
-#     with lock:
-#         decoded = msg.data.decode("utf-8")
-#         try:
-#             data = json.loads(decoded)
-#         except:
-#             msg.ack()
-#             return
-# 
-#         key = (data.get("VEHICLE_ID"), data.get("EVENT_NO_TRIP"))
-#         if key in previous_data:
-#             prev = previous_data[key]
-#             speed = calculate_speed(data, prev)
-#         else:
-#             speed = 0.0
-#         data["SPEED"] = speed
-#         previous_data[key] = data
-# 
-#         validate_message(data)
-#         records.append(data)
-# 
-#         msg.ack()
-#         last_msg_time = time.time()
 
 # MESSAGE HANDLER
 def callback(msg):

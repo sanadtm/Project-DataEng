@@ -1,0 +1,27 @@
+import csv
+import json
+
+features = []
+with open("tunnel_trip.tsv") as tsv:
+    reader = csv.reader(tsv, delimiter="\t")
+    next(reader)  # Skip header line
+
+
+
+    for row in reader:
+        lon, lat, speed = map(float, row)
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"speed": speed}
+        })
+
+geojson = {
+    "type": "FeatureCollection",
+    "features": features
+}
+
+with open("tunnel_trip.geojson", "w") as out:
+    json.dump(geojson, out, indent=2)
+
+print("✅ GeoJSON file created: tunnel_trip.geojson")

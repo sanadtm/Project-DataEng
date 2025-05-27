@@ -1,4 +1,4 @@
-# VM generated files 
+#VM generated files 
 venv
 pubsub-env
 source
@@ -6,3 +6,11 @@ source
 #JSON files
 /vehicle_data/*.json
 /vehicle_data/merged_data/*.json 
+/vehicle_data/merged_data/timestamp.txt
+/visualization/*.geojson
+
+#STOP EVENT DATA folder
+/stop_event_data
+
+#BACKUP folder
+/tuan8
